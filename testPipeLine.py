@@ -1,10 +1,13 @@
+import json
 import pickle
+
+import numpy as np
 import pandas as pd
 from datasets import load_dataset
 from HeapLawPlot import NonLinearLeastSquaresPlotStrategy, SimplePlotStrategy, LogLogPlotStrategy, \
     HeapsLawAnalyzer
-
-from clean_data_strategy import CleanData, SimpleProcessing
+import argparse
+from clean_data_strategy import CleanData, SimpleProcessing, OpenVocab
 from computeVocalAndTotalWord import computeVandT, NoDBCompute
 
 
@@ -22,8 +25,8 @@ def ComputeData(rawData,name):
 
 
 def PlotHeapsLaw(Data,name):
-    plot_strategy = [NonLinearLeastSquaresPlotStrategy(), SimplePlotStrategy(), LogLogPlotStrategy() ]# Can be LogLogPlotStrategy, SimplePlotStrategy, or NonLinearLeastSquaresPlotStrategy
-    plot_strategy_name = ["leastSquare","noneLogLog","LogLog"]
+    plot_strategy = [SimplePlotStrategy(), LogLogPlotStrategy() ]# Can be LogLogPlotStrategy, SimplePlotStrategy, or NonLinearLeastSquaresPlotStrategy
+    plot_strategy_name = ["noneLogLog","LogLog"]
     for i in range(len(plot_strategy)):
         analyzer = HeapsLawAnalyzer(strategy=plot_strategy[i])
         name =plot_strategy_name[i] + name
@@ -32,7 +35,7 @@ def PlotHeapsLaw(Data,name):
     print("plot saved sucessfully")
 
 
-import argparse
+
 
 def main(args):
     # Print a message args.count times
@@ -43,12 +46,28 @@ def loadData(type):
     if type == 1 :
         my_dataset = load_dataset(args.inputdata)
         df = pd.DataFrame(my_dataset['train'])
-        data = cleanData(df[args.choosedata],args.name)
+        data = cleanData(df[args.choosedata][0:10000],args.name)
         return data
+
     elif type == 0:
-        pass
+        data = load_json(args.inputdata)
 
+        # Convert list of dictionaries to a Pandas DataFrame for faster processing
+        df = pd.DataFrame(data)
 
+        # Perform operations on the DataFrame if needed (optional)
+        # e.g., filter or modify the DataFrame
+
+        # Convert the DataFrame back to a list of dictionaries
+        optimized_data = df.to_dict(orient='records')
+
+        cleaned_data = cleanData(optimized_data, args.name)
+
+        return cleaned_data
+def load_json(file_path):
+    with open(file_path, 'r', encoding='utf-8') as file:
+        data = json.load(file)
+    return data
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="")
@@ -57,6 +76,7 @@ if __name__ == "__main__":
     parser.add_argument('--choosedata', type=str, help='what is the name of the column?')
     parser.add_argument('--name', type=str, help='choose name for the outputfile')
     args = parser.parse_args()
+
     data = loadData(args.datasourse)
     newdata = ComputeData(data, args.name)
     PlotHeapsLaw(newdata, args.name)

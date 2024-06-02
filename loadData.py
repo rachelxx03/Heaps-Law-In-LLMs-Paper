@@ -1,5 +1,6 @@
 import json
-
+import os
+from tqdm import tqdm
 import pandas as pd
 from datasets import load_dataset
 
@@ -23,20 +24,35 @@ class TypeOneLoader(DataLoader):
         cleaned_data = data.dropna()  # Example cleanup operation
         return cleaned_data
 
-class JsonLoader(DataLoader):
+class LocalDataLoader(DataLoader):
     def __init__(self, args):
         self.args = args
-    def load_data(self):
-        with open(self.arg.name, 'r') as file:
-            prompts = json.load(file)
-        return prompts
+    def load_data(self, limit = 7000001):
+        start = 0
+        _ , file_ext = os.path.splitext(self.args.inputdata)
+        if file_ext == '.csv':
+            return pd.read_csv(self.args.inputdata)[self.args.choosedata]
+        elif file_ext in ['.json', '.jsonl']:  # Support for .jsonl
+            data = []
+            with open(self.args.inputdata, 'r',  encoding='utf-8') as file:
+                for line in tqdm(file):
+                    json_data = json.loads(line)  # Parse each line as a JSON object
+                    data.append(json_data[self.args.choosedata])  # Extract the desired data
+                    start += 1
+                    if start == limit:
+                        break
+            return data
+        elif file_ext in ['.xls', '.xlsx']:
+            return pd.read_excel(self.args.inputdata)[self.args.choosedata]
+        else:
+            raise ValueError("Unknown file format")
 
 class DataLoaderFactory:
-    def get_loader(self, type, args):
-        if type == 1:
+    def get_loader(self, args):
+        if args.datasourse == 1:
             return TypeOneLoader(args)
-        elif type == 0:
-            return JsonLoader(args)
+        elif args.datasourse == 0:
+            return LocalDataLoader(args)
         else:
             return DataLoader()
 

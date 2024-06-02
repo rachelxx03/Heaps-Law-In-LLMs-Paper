@@ -6,6 +6,8 @@ from matplotlib import pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
 from matplotlib import pyplot as plt
+import numpy as np
+from matplotlib import pyplot as plt
 
 # Define the base class for the plotting strategy
 class PlotStrategy:
@@ -21,6 +23,17 @@ class PlotStrategy:
 
 
 class LogLogPlotStrategy(PlotStrategy):
+    def get_Beta_and_alpha(self, data):
+        log_x = np.log10([pair[0] for pair in data])
+        log_y = np.log10([pair[1] for pair in data])
+
+        coefficients = np.polyfit(log_x, log_y, 1)
+        beta, log_alpha = coefficients
+        return [beta,log_alpha]
+
+
+
+
     def plot(self, data, name):
         log_x = np.log10([pair[0] for pair in data])
         log_y = np.log10([pair[1] for pair in data])
@@ -73,17 +86,16 @@ class SimplePlotStrategy(PlotStrategy):
 
         self.save_plot(name)
 
-# Define the concrete strategy for nonlinear least squares fit plot
-import numpy as np
-from matplotlib import pyplot as plt
 
 class NonLinearLeastSquaresPlotStrategy(PlotStrategy):
-    def plot(self, data, name):
+
+    def plot(self, data, name   ):
+        ANB =  LogLogPlotStrategy().get_Beta_and_alpha(data)
         n_data = np.array([pair[0] for pair in data], dtype=float)
         Vn_data = np.array([pair[1] for pair in data], dtype=float)
-
+#use the estimate from log log
         # Initial guess for parameters K and beta.
-        K_init, beta_init = 10, 0.5
+        K_init, beta_init = ANB[0], ANB[1]
 
         # Perform the Gauss-Newton algorithm to fit Heaps' Law.
         K, beta = self.gauss_newton(n_data, Vn_data, K_init, beta_init)
