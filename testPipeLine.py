@@ -51,18 +51,9 @@ def loadData(type):
 
     elif type == 0:
         data = load_json(args.inputdata)
-
-        # Convert list of dictionaries to a Pandas DataFrame for faster processing
         df = pd.DataFrame(data)
-
-        # Perform operations on the DataFrame if needed (optional)
-        # e.g., filter or modify the DataFrame
-
-        # Convert the DataFrame back to a list of dictionaries
         optimized_data = df.to_dict(orient='records')
-
         cleaned_data = cleanData(optimized_data, args.name)
-
         return cleaned_data
 def load_json(file_path):
     with open(file_path, 'r', encoding='utf-8') as file:
